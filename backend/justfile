@@ -1,0 +1,41 @@
+dev:
+    uv run uvicorn app.main:app --port 8000 --reload
+
+test:
+    uv run pytest tests/ -v
+
+test-q:
+    uv run pytest tests/ -q
+
+migrate:
+    uv run alembic upgrade head
+
+migrate-down:
+    uv run alembic downgrade -1
+
+migrate-generate NAME:
+    uv run alembic revision --autogenerate -m "{{NAME}}"
+
+migrate-status:
+    uv run alembic current
+
+docker-up:
+    docker compose up -d
+
+docker-down:
+    docker compose down
+
+docker-logs:
+    docker compose logs -f
+
+# Build the Docker image the `synthea` connector runs (pinned Synthea release).
+synthea-build VERSION="v4.0.0":
+    docker build -t fhir-gen-synthea:{{trim_start_match(VERSION, "v")}} --build-arg SYNTHEA_VERSION={{VERSION}} docker/synthea
+
+# Real-Synthea tests (need Docker + the image above); excluded from `just test`.
+test-e2e:
+    uv run pytest tests/e2e -v -m slow
+
+# Regenerate the frontend typed API client after changing the API (from frontend/: pnpm gen:api).
+openapi:
+    uv run python scripts/export_openapi.py ../frontend/openapi.json

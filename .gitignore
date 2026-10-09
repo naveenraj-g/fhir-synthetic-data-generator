@@ -1,0 +1,37 @@
+# Local data: job history, generated files and caches of YOUR runs. Never commit these.
+backend/data/
+**/data/app.db
+
+# Secrets and local settings (the *.example files are the templates to copy from)
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+.venv/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Generated intermediate (frontend/src/lib/api/schema.ts is the committed result of `pnpm gen:api`)
+frontend/openapi.json
+
+# Editors, OS, tool output
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+graphify-out/
+.claude/

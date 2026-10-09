@@ -1,0 +1,18 @@
+# Caching-layer config. Checked into git — not a secret, same spirit as
+# configs/config.yaml (which this file is a sibling of, not a replacement
+# for). Split out on its own because caching is a separately-evolving
+# concern from general app behavior: as more things become cacheable, this
+# file grows instead of crowding config.yaml.
+#
+# Scoped to genuine caching only — something stored to avoid a re-fetch.
+# redis.enabled and rate_limit live in configs/config.yaml instead — see
+# that file's header comment for why neither belongs here.
+#
+# Precedence is identical to config.yaml: real env var > .env > this file >
+# field defaults. Nested env override example: EXAMPLE_CACHE__BACKEND=memory.
+
+example_cache:
+  # redis | memory — forced to "memory" whenever configs/config.yaml's
+  # redis.enabled is false. Replace/rename this with your own real cache
+  # as your app grows — this is a deliberately minimal placeholder.
+  backend: redis

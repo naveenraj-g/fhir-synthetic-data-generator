@@ -1,0 +1,30 @@
+# Config used by the test suite: fixtures connector is the default so tests need no Docker.
+version: 1
+defaults:
+  connector: static_fixtures
+  limits: { sync_max_patients: 5, max_patients_per_job: 5000, inline_max_bytes: 5000000, max_concurrent_jobs: 2, artifact_ttl_hours: 72 }
+connectors:
+  static_fixtures: { type: static_fixtures, enabled: true, options: { directory: fixtures/synthea_r4 } }
+  synthea:
+    type: synthea
+    enabled: true
+    options: { mode: docker, docker_image: fhir-gen-synthea:4.0.0, reference_date: "20260101", properties: { generate.thread_pool_size: 2 } }
+slicers:
+  redact_infra: { drop_types: [Claim, ClaimResponse, ExplanationOfBenefit] }
+sinks:
+  inline: { type: inline }
+  json: { type: json }
+  zip: { type: zip }
+  ndjson: { type: ndjson }
+specialties:
+  diabetes: { conditions: ["44054006"], age_range: [40, 90] }
+  gastro: { match: any, conditions: ["235595009"], procedures: ["73761001"] }
+presets:
+  full-patient:
+    cohort: { count: 1 }
+    shape: [ { slicer: full_record } ]
+    sink: { name: inline }
+  vitals-only:
+    cohort: { count: 50 }
+    shape: [ { slicer: resource_types, params: { types: [Observation] } } ]
+    sink: { name: ndjson }

@@ -1,0 +1,789 @@
+# Synthetic data connectors — connectors, slicer defaults, sinks, specialties, presets, limits.
+# Design: plan/04-configuration.md. Secrets are never stored here: reference them as ${ENV_VAR}.
+version: 1
+
+defaults:
+  connector: synthea
+  fhir_version: R4
+  limits:
+    sync_max_patients: 5          # inline responses only up to this many patients (Synthea ~15s+ per run)
+    max_patients_per_job: 5000
+    inline_max_bytes: 5000000     # NB: one Synthea patient bundle can be several MB; use zip/ndjson for real cohorts
+    max_concurrent_jobs: 2
+    artifact_ttl_hours: 72
+
+connectors:
+  synthea:
+    type: synthea
+    enabled: true
+    options:
+      mode: ${SYNTHEA_MODE:-docker}      # docker (default, dev) | local (JDK 17+ and vendor/synthea jar; the API image sets this)
+      docker_image: fhir-gen-synthea:4.0.0   # build once: `just synthea-build`
+      jvm_args: ["-Xmx2g"]
+      timeout_seconds: 900              # per attempt; a stalled run is retried once with a derived seed (retries_on_timeout)
+      # Pinned so the same seed gives byte-identical output. Synthea's results depend on "today"
+      # otherwise. Set to null to use the current date (then a seed alone is NOT reproducible).
+      reference_date: "20260101"
+      # end_date (-e) defaults to reference_date. Without it Synthea simulates up to TODAY, so the same seed
+      # would give different data on different days.
+      default_state: Massachusetts
+      years_of_history: 10
+      modules_dir: null                  # folder of custom Synthea modules (-d)
+      properties: {}                     # extra --key=value Synthea properties
+
+  # No Java/Docker needed: serves Synthea-shaped sample bundles from fixtures/.
+  static_fixtures:
+    type: static_fixtures
+    enabled: true
+    options:
+      directory: fixtures/synthea_r4
+
+slicers:
+  redact_infra:
+    drop_types: [Claim, ClaimResponse, ExplanationOfBenefit]
+
+sinks:
+  inline: { type: inline }
+  json: { type: json }     # one downloadable file the UI can show; the default for "view here" (runs in the background)
+  zip: { type: zip }
+  ndjson: { type: ndjson }
+
+# A specialty is a named set of conditions. Patients are generated until they have ANY of them
+# (Synthea "keep module"), so `count` patients with the condition are returned exactly.
+# Codes are SNOMED-CT, verified against Synthea v4.0.0's modules; prefix with a system ("ICD10:...") if needed.
+# `age_range` is an optional default (see runtime.resolve).
+specialties:
+  diabetes:
+    description: Patients with type 2 diabetes
+    conditions: ["44054006"]            # Diabetes mellitus type 2
+    age_range: [40, 90]                 # default; makes the search fast and reliable (request/preset can override)
+  cardiology:
+    description: Patients with a heart attack, atrial fibrillation or heart failure
+    conditions: ["22298006", "49436004", "88805009"]
+    age_range: [45, 90]
+  oncology:
+    description: Cancer patients - breast, colorectal or lung cancer - or anyone who had chemotherapy or radiation
+    match: any
+    age_range: [30, 90]
+    conditions: ["254837009", "363406005", "254637007"]   # breast, colon, non-small-cell lung cancer
+    procedures: ["367336001", "33195004"]                 # chemotherapy, external beam radiation
+  # `match: any` = has one of the conditions OR has had one of the operations. Codes verified against the Synthea
+  # v4.0.0 term index (GET /connectors/synthea/terms?q=...); procedures are in `procedures`, not `conditions`.
+  gastroenterology:
+    description: Digestive-system patients - reflux, gallstones, colon disease - or anyone who had a GI operation
+    match: any
+    age_range: [20, 90]
+    conditions: ["235595009", "235919008", "65275009", "363406005", "68496003"]   # GERD, gallbladder calculus, acute cholecystitis, colon cancer, colon polyp
+    procedures: ["73761001", "38102005", "45595009", "80146002", "43075005"]      # colonoscopy, cholecystectomy (open, laparoscopic), appendectomy, partial colon resection
+  orthopedics:
+    description: Bone and joint patients - arthritis, osteoporosis, fractures - or anyone who had a joint operation
+    match: any
+    age_range: [18, 90]
+    conditions: ["239873007", "239872002", "359817006", "16114001", "58150001", "65966004", "64859006"]   # knee OA, hip OA, hip/ankle/collarbone/forearm fracture, osteoporosis
+    procedures: ["609588000", "52734007", "699253003", "387685009"]   # total knee replacement, total hip replacement, knee / shoulder joint manipulation
+  # ── More specialties. Codes come from the Synthea v4.0.0 term index (search them: GET /connectors/synthea/terms). ──
+  pulmonology:
+    description: Lung and breathing - asthma, COPD, emphysema, sleep apnea - or lung surgery
+    match: any
+    conditions: ["195967001", "185086009", "87433001", "78275009"]   # asthma, chronic obstructive bronchitis, emphysema, obstructive sleep apnea
+    procedures: ["429609002", "88039007", "85765000"]                # lung volume reduction, lung transplant, bronchoscopy
+  neurology:
+    description: Brain and nerves - epilepsy, stroke, Alzheimer's, migraine, brain injury
+    match: any
+    conditions: ["84757009", "128613002", "230690007", "26929004", "427419006", "127295002"]   # epilepsy, seizure disorder, stroke, Alzheimer's, migraine, traumatic brain injury
+    procedures: ["54550000"]                                                                     # EEG
+  mental-health:
+    description: Mental health and substance use - depression, PTSD, anxiety, ADHD, alcohol and drug dependence
+    match: any
+    conditions: ["370143000", "36923009", "47505003", "80583007", "192127007", "7200002", "6525002"]
+    procedures: ["228557008"]                                                                    # cognitive behavioural therapy
+  obstetrics-gynecology:
+    description: Women's health - pregnancy, high-risk pregnancy, miscarriage, caesarean section
+    match: any
+    gender: F
+    age_range: [16, 45]
+    conditions: ["72892002", "47200007", "19169002"]   # normal pregnancy, high-risk pregnancy, first-trimester miscarriage
+    procedures: ["11466000"]                           # caesarean section
+  nephrology:
+    description: Kidney disease - chronic kidney disease, end-stage renal disease, dialysis
+    match: any
+    age_range: [30, 95]
+    conditions: ["431855005", "431856006", "433144002", "431857002", "46177005", "127013003"]   # CKD stages 1-4, end-stage renal disease, diabetic kidney disease
+    procedures: ["265764009"]                                                                   # renal dialysis
+  endocrinology:
+    description: Hormones and metabolism - diabetes, prediabetes, thyroid, obesity
+    match: any
+    age_range: [18, 90]
+    conditions: ["44054006", "714628002", "83664006", "162864005", "408512008"]   # type 2 diabetes, prediabetes, hypothyroidism, obesity, severe obesity
+  dermatology:
+    description: Skin - atopic and contact dermatitis
+    conditions: ["24079001", "40275004"]
+  ent:
+    description: Ear, nose and throat - ear infections, sinusitis, allergic rhinitis, sore throat
+    match: any
+    conditions: ["65363002", "36971009", "75498004", "40055000", "444814009", "367498001", "446096008", "232353008", "195662009"]
+    procedures: ["112790001"]                           # nasal sinus endoscopy
+  infectious-disease:
+    description: Infections - urinary tract infections (incl. recurrent) and HIV
+    conditions: ["68566005", "197927001", "86406008"]
+  ophthalmology:
+    description: Eyes - diabetic retinopathy, macular edema, and its eye exams and laser treatment
+    match: any
+    age_range: [30, 90]
+    conditions: ["1551000119108", "1501000119109", "97331000119101", "60951000119105"]
+    procedures: ["722161008", "397539000"]               # diabetic retinal eye exam, retinal photocoagulation
+  rheumatology:
+    description: Autoimmune and joint-inflammation disease - rheumatoid arthritis, lupus, gout, fibromyalgia
+    age_range: [18, 90]
+    conditions: ["69896004", "200936003", "90560007", "95417003", "203082005"]
+  hematology:
+    description: Blood - anemia and leukemia, transfusions
+    match: any
+    conditions: ["271737000", "91861009"]               # anemia, acute myeloid leukemia
+    procedures: ["180207008"]                           # transfusion of packed cells
+  pediatrics:
+    description: Children and teenagers (0-17), any condition
+    age_range: [0, 17]
+  geriatrics:
+    description: Older adults (65 and over), any condition
+    age_range: [65, 100]
+  cardiac-surgery:
+    description: Patients who had a coronary bypass operation
+    procedures: ["232717009", "414088005", "418824004"]   # CABG, emergency CABG, off-pump CABG
+    age_range: [40, 90]
+
+presets:
+  # ── General ──────────────────────────────────────────────────────────────
+  full-patient:
+    title: One complete patient
+    category: General
+    description: One complete patient record, returned inline
+    cohort: { count: 1 }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: json }
+  vitals-only:
+    title: Vital signs only
+    category: General
+    description: Vital signs only (blood pressure, heart rate, weight...) for 50 patients, as NDJSON
+    cohort: { count: 50 }
+    shape:
+      - { slicer: resource_types, params: { types: [Observation] } }
+      - { slicer: resource_filter, params: { resource_type: Observation, categories: [vital-signs] } }
+    sink: { name: ndjson }
+  labs-only:
+    title: Lab results only
+    category: General
+    description: Laboratory results only, for 50 patients, as NDJSON
+    cohort: { count: 50 }
+    shape:
+      - { slicer: resource_types, params: { types: [Observation, DiagnosticReport] } }
+      - { slicer: resource_filter, params: { resource_type: Observation, categories: [laboratory] } }
+    sink: { name: ndjson }
+  patient-demographics:
+    title: Patients only
+    category: General
+    description: Patient resources only (who they are - no clinical history), 100 patients
+    cohort: { count: 100 }
+    shape: [ { slicer: resource_types, params: { groups: [demographics] } } ]
+    sink: { name: ndjson }
+  administrative-data:
+    title: Administration data only
+    category: General
+    description: Providers, organizations and locations only - no patients. count is small because patients are discarded
+    cohort: { count: 1 }
+    shape: [ { slicer: infrastructure } ]
+    sink: { name: ndjson }
+  financial-data:
+    title: Billing data only
+    category: General
+    description: Claims and insurance payments only, for 10 patients
+    cohort: { count: 10 }
+    shape: [ { slicer: resource_types, params: { groups: [financial] } } ]
+    sink: { name: ndjson }
+  last-5-years:
+    title: Past 5 years of history
+    category: General
+    description: Each patient's whole record for the past five years (relative to the reference date)
+    cohort: { count: 10 }
+    shape: [ { slicer: date_window, params: { last_n_years: 5 } } ]
+    sink: { name: zip }
+  recent-history:
+    title: Past 2 years of history
+    category: General
+    description: Only the last two years of each patient's record (relative to the reference date), 10 patients
+    cohort: { count: 10 }
+    shape: [ { slicer: date_window, params: { last_n_days: 730 } } ]
+    sink: { name: zip }
+  er-visits:
+    title: Emergency room visits
+    category: General
+    description: Every emergency-room visit (one bundle each) for 20 patients, as a zip
+    cohort: { count: 20 }
+    shape: [ { slicer: encounter, params: { encounter_class: [EMER], selector: all } } ]
+    sink: { name: zip }
+  single-surgery-episode:
+    title: One appendectomy stay
+    category: General
+    description: One appendectomy episode (the surgical stay and everything belonging to it), self-contained
+    cohort: { count: 1, procedures: ["80146002"] }     # Excision of appendix; full history is exported for procedure cohorts
+    shape:
+      - { slicer: encounter, params: { with_procedure: ["80146002"], selector: latest } }
+    sink: { name: json }
+  diabetes-cohort:
+    title: Diabetes patients
+    category: General
+    description: 10 patients with type 2 diabetes, full records, zipped
+    cohort: { count: 10, specialty: diabetes }
+    shape: [ { slicer: full_record } ]
+    sink: { name: zip }
+  diabetes-journey:
+    title: Diabetes journey
+    category: General
+    description: The diabetes story - every encounter the condition touches - for 5 diabetic patients
+    cohort: { count: 5, specialty: diabetes }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["44054006"] } } ]
+    sink: { name: zip }
+  cardiology-cohort:
+    title: Cardiology patients
+    category: General
+    description: 10 cardiology patients, billing records dropped, zipped
+    cohort: { count: 10, specialty: cardiology }
+    shape: [ { slicer: redact_infra } ]
+    sink: { name: zip }
+  demo-fixture-patient:
+    title: Instant demo patient
+    category: General
+    description: Instant sample patient from static fixtures (no Docker needed)
+    connector: static_fixtures
+    cohort: { count: 1 }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: json }
+
+  # ── Gastroenterology ─────────────────────────────────────────────────────
+  # Each operation template is ONE patient who had that operation; the result is the operation's stay (everything that
+  # happened during it), self-contained. Codes verified in the Synthea v4.0.0 term index (GET /connectors/synthea/terms).
+  gastro-one-patient-all-operations:
+    title: One patient - all their GI operations
+    category: Gastroenterology
+    description: One gastroenterology patient, and one bundle for each digestive-system operation they had (colonoscopy, gallbladder, appendix, colon resection)
+    cohort: { count: 1, specialty: gastroenterology }
+    shape:
+      - slicer: encounter
+        params: { selector: all, with_procedure: ["73761001", "38102005", "45595009", "80146002", "43075005"] }
+    sink: { name: zip }
+  gastro-patient-full-record:
+    title: One gastroenterology patient - full record
+    category: Gastroenterology
+    description: The complete record of one patient with a digestive-system disease or operation
+    cohort: { count: 1, specialty: gastroenterology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  gastro-colonoscopy:
+    title: Colonoscopy
+    category: Gastroenterology
+    description: One patient who had a colonoscopy, and the visit(s) in which it was done
+    cohort: { count: 1, procedures: ["73761001"], age_range: [45, 85] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["73761001"] } } ]
+    sink: { name: json }
+  gastro-gallbladder-removal:
+    title: Gallbladder removal (cholecystectomy)
+    category: Gastroenterology
+    description: One patient who had their gallbladder removed (open or laparoscopic), with the whole stay
+    cohort: { count: 1, procedures: ["38102005", "45595009"], age_range: [20, 85] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["38102005", "45595009"] } } ]
+    sink: { name: json }
+  gastro-appendectomy:
+    title: Appendectomy
+    category: Gastroenterology
+    description: One patient who had their appendix removed, with the whole stay
+    cohort: { count: 1, procedures: ["80146002"] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["80146002"] } } ]
+    sink: { name: json }
+  gastro-colon-resection:
+    title: Partial colon resection
+    category: Gastroenterology
+    description: One patient who had part of the colon removed, with the whole stay
+    cohort: { count: 1, procedures: ["43075005"], age_range: [40, 90] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["43075005"] } } ]
+    sink: { name: json }
+  gastro-reflux-journey:
+    title: Acid reflux (GERD) journey
+    category: Gastroenterology
+    description: 5 patients with gastro-oesophageal reflux; every encounter the condition touches
+    cohort: { count: 5, conditions: ["235595009"], age_range: [20, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["235595009"] } } ]
+    sink: { name: zip }
+  gastroenterology-operations:
+    title: Several patients - GI operations
+    category: Gastroenterology
+    description: Gastroenterology patients, one bundle per GI operation with everything belonging to that stay
+    cohort: { count: 3, specialty: gastroenterology }
+    shape:
+      - slicer: encounter
+        params: { selector: all, with_procedure: ["73761001", "38102005", "45595009", "80146002", "43075005"] }
+    sink: { name: zip }
+
+  # ── Orthopedics (bones and joints) ───────────────────────────────────────
+  ortho-one-patient-all-operations:
+    title: One patient - all their orthopedic operations
+    category: Orthopedics
+    description: One orthopedic patient, and one bundle for each joint operation they had (knee or hip replacement, joint manipulation)
+    cohort: { count: 1, specialty: orthopedics }
+    shape:
+      - slicer: encounter
+        params: { selector: all, with_procedure: ["609588000", "52734007", "699253003", "387685009"] }
+    sink: { name: zip }
+  ortho-patient-full-record:
+    title: One orthopedic patient - full record
+    category: Orthopedics
+    description: The complete record of one patient with a bone/joint condition or operation
+    cohort: { count: 1, specialty: orthopedics }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  ortho-knee-replacement:
+    title: Knee replacement
+    category: Orthopedics
+    description: One patient who had a total knee replacement, with the whole stay
+    cohort: { count: 1, procedures: ["609588000"], age_range: [50, 90] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["609588000"] } } ]
+    sink: { name: json }
+  ortho-hip-replacement:
+    title: Hip replacement
+    category: Orthopedics
+    description: One patient who had a total hip replacement, with the whole stay
+    cohort: { count: 1, procedures: ["52734007"], age_range: [50, 90] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["52734007"] } } ]
+    sink: { name: json }
+  ortho-fracture-care:
+    title: Fracture care
+    category: Orthopedics
+    description: 3 patients with a broken bone (hip, ankle, collarbone, forearm, rib); the injury and its treatment. Rarer, so it can take a few minutes
+    cohort: { count: 3, conditions: ["359817006", "16114001", "58150001", "65966004", "33737001"] }
+    shape:
+      - slicer: condition_scoped
+        params: { conditions: ["359817006", "16114001", "58150001", "65966004", "33737001"] }
+    sink: { name: zip }
+  ortho-osteoarthritis-journey:
+    title: Osteoarthritis journey
+    category: Orthopedics
+    description: 3 patients with osteoarthritis of the knee, hip or hand; every encounter the condition touches
+    cohort: { count: 3, conditions: ["239873007", "239872002", "201834006"], age_range: [45, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["239873007", "239872002", "201834006"] } } ]
+    sink: { name: zip }
+  ortho-osteoporosis-journey:
+    title: Osteoporosis journey
+    category: Orthopedics
+    description: 3 patients with osteoporosis; bone-density scans, medication and follow-up (about a minute)
+    cohort: { count: 3, conditions: ["64859006"], age_range: [50, 95] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["64859006"] } } ]
+    sink: { name: zip }
+
+  # ── Preventive health ────────────────────────────────────────────────────
+  # Preventive care is what happens BEFORE someone is ill: routine check-ups, screening tests, vaccines and checks of
+  # risk factors (blood pressure, weight, smoking, mood). These need no disease filter: every patient has some.
+  preventive-health-profile:
+    title: One patient - preventive health profile
+    category: Preventive health
+    description: One patient's preventive care in one record - check-up visits, screenings, vaccines, vitals and lifestyle checks. No billing
+    cohort: { count: 1 }
+    shape:
+      - { slicer: resource_types, params: { groups: [demographics, encounters, immunizations, procedures, observations], include_infrastructure: true } }
+    sink: { name: zip }
+  preventive-wellness-visits:
+    title: Routine check-up visits
+    category: Preventive health
+    description: Every routine check-up / general examination visit (one bundle per visit) for 5 patients
+    cohort: { count: 5 }
+    shape:
+      - slicer: encounter
+        params: { selector: all, encounter_type: ["General examination of patient", "Encounter for check up"] }
+    sink: { name: zip }
+  preventive-screenings:
+    title: Screening tests
+    category: Preventive health
+    description: Visits where a screening was done - depression, anxiety, substance use, fall risk, HIV/hepatitis, mammography, bone density
+    cohort: { count: 5 }
+    shape:
+      - slicer: encounter
+        params:
+          selector: all
+          with_procedure: ["screening", "710841007", "428211000124100", "762993000", "710824005", "24623002", "312681000"]
+    sink: { name: zip }
+  preventive-immunizations:
+    title: Vaccinations
+    category: Preventive health
+    description: Immunization records only (with the patient), for 20 patients
+    cohort: { count: 20 }
+    shape: [ { slicer: resource_types, params: { groups: [immunizations], include_infrastructure: true } } ]
+    sink: { name: ndjson }
+  preventive-risk-factors:
+    title: Risk-factor checks
+    category: Preventive health
+    description: Vital signs, lifestyle (social history) and questionnaire results - the measurements that flag future risk - for 20 patients
+    cohort: { count: 20 }
+    shape:
+      - { slicer: resource_types, params: { types: [Observation], include_infrastructure: true } }
+      - { slicer: resource_filter, params: { resource_type: Observation, categories: [vital-signs, social-history, survey] } }
+    sink: { name: ndjson }
+
+  # ── Specialties: one patient per specialty, plus journeys (a condition's story) and operation stays ───────────
+  # Each template was run against real Synthea (tests/e2e/test_specialty_templates.py). Specialty codes: see `specialties:`.
+
+  cardiology-one-patient:
+    title: "One cardiology patient - full record"
+    category: "Cardiology"
+    description: "The complete record of one patient seen for cardiology"
+    cohort: { count: 1, specialty: cardiology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  cardiology-atrial-fibrillation-journey:
+    title: "Atrial fibrillation journey"
+    category: "Cardiology"
+    description: "3 patients with atrial fibrillation: diagnosis, medication, follow-up"
+    cohort: { count: 3, conditions: ["49436004"], age_range: [45, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["49436004"] } } ]
+    sink: { name: zip }
+  cardiology-heart-failure-journey:
+    title: "Heart failure journey"
+    category: "Cardiology"
+    description: "3 patients with chronic heart failure: diagnosis, treatment, monitoring"
+    cohort: { count: 3, conditions: ["88805009"], age_range: [45, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["88805009"] } } ]
+    sink: { name: zip }
+  cardiology-bypass-surgery:
+    title: "Coronary bypass surgery"
+    category: "Cardiology"
+    description: "One patient who had a coronary artery bypass (CABG), with the whole stay"
+    cohort: { count: 1, procedures: ["232717009", "414088005", "418824004"], age_range: [40, 90] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["232717009", "414088005", "418824004"] } } ]
+    sink: { name: json }
+  pulmonology-one-patient:
+    title: "One pulmonology patient - full record"
+    category: "Pulmonology"
+    description: "The complete record of one patient seen for pulmonology"
+    cohort: { count: 1, specialty: pulmonology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  pulmonology-asthma-journey:
+    title: "Asthma journey"
+    category: "Pulmonology"
+    description: "3 patients with asthma: diagnosis, inhalers, check-ups"
+    cohort: { count: 3, conditions: ["195967001", "233678006"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["195967001", "233678006"] } } ]
+    sink: { name: zip }
+  pulmonology-copd-journey:
+    title: "COPD journey"
+    category: "Pulmonology"
+    description: "3 patients with chronic obstructive bronchitis or emphysema"
+    cohort: { count: 3, conditions: ["185086009", "87433001"], age_range: [40, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["185086009", "87433001"] } } ]
+    sink: { name: zip }
+  pulmonology-sleep-apnea-journey:
+    title: "Sleep apnea journey"
+    category: "Pulmonology"
+    description: "3 patients with sleep apnea: sleep study, CPAP, follow-up"
+    cohort: { count: 3, conditions: ["78275009"], age_range: [30, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["78275009"] } } ]
+    sink: { name: zip }
+  neurology-one-patient:
+    title: "One neurology patient - full record"
+    category: "Neurology"
+    description: "The complete record of one patient seen for neurology"
+    cohort: { count: 1, specialty: neurology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  neurology-epilepsy-journey:
+    title: "Epilepsy journey"
+    category: "Neurology"
+    description: "3 patients with epilepsy or a seizure disorder: EEG, medication, follow-up"
+    cohort: { count: 3, conditions: ["84757009", "128613002"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["84757009", "128613002"] } } ]
+    sink: { name: zip }
+  neurology-migraine-journey:
+    title: "Migraine journey"
+    category: "Neurology"
+    description: "3 patients with chronic migraine"
+    cohort: { count: 3, conditions: ["427419006", "124171000119105"], age_range: [18, 80] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["427419006", "124171000119105"] } } ]
+    sink: { name: zip }
+  neurology-alzheimers-journey:
+    title: "Alzheimer's disease journey"
+    category: "Neurology"
+    description: "3 patients with Alzheimer's disease (older patients; rarer, can take a while)"
+    cohort: { count: 3, conditions: ["26929004"], age_range: [65, 100] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["26929004"] } } ]
+    sink: { name: zip }
+  mental-health-one-patient:
+    title: "One mental health patient - full record"
+    category: "Mental health"
+    description: "The complete record of one patient seen for mental health"
+    cohort: { count: 1, specialty: mental-health }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  mental-health-adhd-journey:
+    title: "ADHD journey"
+    category: "Mental health"
+    description: "3 children with attention deficit disorder: diagnosis and behavioural therapy"
+    cohort: { count: 3, conditions: ["192127007"], age_range: [5, 17] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["192127007"] } } ]
+    sink: { name: zip }
+  mental-health-substance-use-journey:
+    title: "Substance use journey"
+    category: "Mental health"
+    description: "3 patients with drug or alcohol dependence"
+    cohort: { count: 3, conditions: ["6525002", "7200002"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["6525002", "7200002"] } } ]
+    sink: { name: zip }
+  mental-health-depression-journey:
+    title: "Depression journey"
+    category: "Mental health"
+    description: "3 patients with major depression (rarer, can take a while)"
+    cohort: { count: 3, conditions: ["370143000", "36923009"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["370143000", "36923009"] } } ]
+    sink: { name: zip }
+  endocrinology-one-patient:
+    title: "One endocrinology patient - full record"
+    category: "Endocrinology"
+    description: "The complete record of one patient seen for endocrinology"
+    cohort: { count: 1, specialty: endocrinology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  endocrinology-prediabetes-journey:
+    title: "Prediabetes journey"
+    category: "Endocrinology"
+    description: "3 patients with prediabetes"
+    cohort: { count: 3, conditions: ["714628002"], age_range: [30, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["714628002"] } } ]
+    sink: { name: zip }
+  endocrinology-obesity-journey:
+    title: "Obesity journey"
+    category: "Endocrinology"
+    description: "3 patients with obesity (BMI 30+)"
+    cohort: { count: 3, conditions: ["162864005", "408512008"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["162864005", "408512008"] } } ]
+    sink: { name: zip }
+  nephrology-one-patient:
+    title: "One nephrology patient - full record"
+    category: "Nephrology"
+    description: "The complete record of one patient seen for nephrology"
+    cohort: { count: 1, specialty: nephrology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  nephrology-ckd-journey:
+    title: "Chronic kidney disease journey"
+    category: "Nephrology"
+    description: "3 patients with chronic kidney disease (stages 1-4) or kidney failure"
+    cohort: { count: 3, conditions: ["431855005", "431856006", "433144002", "431857002", "46177005"], age_range: [40, 95] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["431855005", "431856006", "433144002", "431857002", "46177005"] } } ]
+    sink: { name: zip }
+  nephrology-dialysis-stay:
+    title: "Dialysis"
+    category: "Nephrology"
+    description: "One patient who had renal dialysis, with the visits in which it was done"
+    cohort: { count: 1, procedures: ["265764009"], age_range: [30, 95] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["265764009"] } } ]
+    sink: { name: json }
+  oncology-one-patient:
+    title: "One oncology patient - full record"
+    category: "Oncology"
+    description: "The complete record of one patient seen for oncology"
+    cohort: { count: 1, specialty: oncology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  oncology-breast-cancer-journey:
+    title: "Breast cancer journey"
+    category: "Oncology"
+    description: "3 patients with breast cancer: screening, biopsy, surgery, therapy"
+    cohort: { count: 3, conditions: ["254837009"], gender: F, age_range: [40, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["254837009"] } } ]
+    sink: { name: zip }
+  oncology-lung-cancer-journey:
+    title: "Lung cancer journey"
+    category: "Oncology"
+    description: "3 patients with lung cancer (rarer, can take a while)"
+    cohort: { count: 3, conditions: ["254637007"], age_range: [40, 95] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["254637007"] } } ]
+    sink: { name: zip }
+  dermatology-one-patient:
+    title: "One dermatology patient - full record"
+    category: "Dermatology"
+    description: "The complete record of one patient seen for dermatology"
+    cohort: { count: 1, specialty: dermatology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  dermatology-dermatitis-journey:
+    title: "Dermatitis journey"
+    category: "Dermatology"
+    description: "3 patients with atopic or contact dermatitis"
+    cohort: { count: 3, conditions: ["24079001", "40275004"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["24079001", "40275004"] } } ]
+    sink: { name: zip }
+  ent-one-patient:
+    title: "One ent patient - full record"
+    category: "ENT (ear, nose, throat)"
+    description: "The complete record of one patient seen for ent"
+    cohort: { count: 1, specialty: ent }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  ent-ear-infection-journey:
+    title: "Ear infection journey"
+    category: "ENT (ear, nose, throat)"
+    description: "3 patients with otitis media"
+    cohort: { count: 3, conditions: ["65363002"], age_range: [0, 17] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["65363002"] } } ]
+    sink: { name: zip }
+  ent-sinusitis-journey:
+    title: "Sinusitis journey"
+    category: "ENT (ear, nose, throat)"
+    description: "3 patients with acute or chronic sinusitis"
+    cohort: { count: 3, conditions: ["36971009", "75498004", "40055000", "444814009"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["36971009", "75498004", "40055000", "444814009"] } } ]
+    sink: { name: zip }
+  ent-allergic-rhinitis-journey:
+    title: "Allergic rhinitis (hay fever) journey"
+    category: "ENT (ear, nose, throat)"
+    description: "3 patients with allergic rhinitis"
+    cohort: { count: 3, conditions: ["367498001", "446096008", "232353008"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["367498001", "446096008", "232353008"] } } ]
+    sink: { name: zip }
+  infectious-disease-one-patient:
+    title: "One infectious disease patient - full record"
+    category: "Infectious disease"
+    description: "The complete record of one patient seen for infectious disease"
+    cohort: { count: 1, specialty: infectious-disease }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  infectious-disease-uti-journey:
+    title: "Urinary tract infection journey"
+    category: "Infectious disease"
+    description: "3 patients with a urinary tract infection (including recurrent)"
+    cohort: { count: 3, conditions: ["68566005", "197927001"] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["68566005", "197927001"] } } ]
+    sink: { name: zip }
+  infectious-disease-hiv-journey:
+    title: "HIV journey"
+    category: "Infectious disease"
+    description: "3 patients with HIV: diagnosis, viral load, treatment (rarer, can take a while)"
+    cohort: { count: 3, conditions: ["86406008"], age_range: [18, 80] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["86406008"] } } ]
+    sink: { name: zip }
+  ophthalmology-one-patient:
+    title: "One ophthalmology patient - full record"
+    category: "Ophthalmology"
+    description: "The complete record of one patient seen for ophthalmology"
+    cohort: { count: 1, specialty: ophthalmology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  ophthalmology-diabetic-retinopathy-journey:
+    title: "Diabetic eye disease journey"
+    category: "Ophthalmology"
+    description: "3 patients with diabetic retinopathy or macular edema"
+    cohort: { count: 3, conditions: ["1551000119108", "1501000119109", "97331000119101"], age_range: [30, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["1551000119108", "1501000119109", "97331000119101"] } } ]
+    sink: { name: zip }
+  ophthalmology-retinal-eye-exam:
+    title: "Diabetic retinal eye exam"
+    category: "Ophthalmology"
+    description: "One patient who had a diabetic retinal eye exam, with that visit"
+    cohort: { count: 1, procedures: ["722161008"], age_range: [30, 90] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["722161008"] } } ]
+    sink: { name: json }
+  rheumatology-one-patient:
+    title: "One rheumatology patient - full record"
+    category: "Rheumatology"
+    description: "The complete record of one patient seen for rheumatology"
+    cohort: { count: 1, specialty: rheumatology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  rheumatology-rheumatoid-arthritis-journey:
+    title: "Rheumatoid arthritis journey"
+    category: "Rheumatology"
+    description: "3 patients with rheumatoid arthritis"
+    cohort: { count: 3, conditions: ["69896004"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["69896004"] } } ]
+    sink: { name: zip }
+  rheumatology-gout-journey:
+    title: "Gout journey"
+    category: "Rheumatology"
+    description: "3 patients with gout"
+    cohort: { count: 3, conditions: ["90560007"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["90560007"] } } ]
+    sink: { name: zip }
+  rheumatology-fibromyalgia-journey:
+    title: "Fibromyalgia journey"
+    category: "Rheumatology"
+    description: "3 patients with fibromyalgia"
+    cohort: { count: 3, conditions: ["95417003", "203082005"], age_range: [18, 90] }
+    shape: [ { slicer: condition_scoped, params: { conditions: ["95417003", "203082005"] } } ]
+    sink: { name: zip }
+  obstetrics-gynecology-one-patient:
+    title: "One women's health patient - full record"
+    category: "Women's health (OB/GYN)"
+    description: "The complete record of one patient seen for obstetrics gynecology"
+    cohort: { count: 1, specialty: obstetrics-gynecology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  obstetrics-gynecology-prenatal-care:
+    title: "Prenatal care"
+    category: "Women's health (OB/GYN)"
+    description: "One woman and her prenatal visits (heart-beat checks, scans, tests), one bundle per visit"
+    cohort: { count: 1, procedures: ["225158009"], gender: F, age_range: [18, 42] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["225158009"] } } ]
+    sink: { name: zip }
+  obstetrics-gynecology-cesarean-section:
+    title: "Caesarean section"
+    category: "Women's health (OB/GYN)"
+    description: "One woman who had a caesarean section, with the whole stay"
+    cohort: { count: 1, procedures: ["11466000"], gender: F, age_range: [20, 45] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["11466000"] } } ]
+    sink: { name: json }
+  hematology-one-patient:
+    title: "One hematology patient - full record"
+    category: "Hematology"
+    description: "The complete record of one patient seen for hematology"
+    cohort: { count: 1, specialty: hematology }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  hematology-transfusion:
+    title: "Blood transfusion"
+    category: "Hematology"
+    description: "One patient who had a packed-cell transfusion, with that stay"
+    cohort: { count: 1, procedures: ["180207008"] }
+    shape: [ { slicer: encounter, params: { selector: all, with_procedure: ["180207008"] } } ]
+    sink: { name: json }
+  pediatrics-one-patient:
+    title: One child - full record
+    category: Pediatrics
+    description: The complete record of one child or teenager (0-17)
+    cohort: { count: 1, specialty: pediatrics }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  pediatrics-vaccinations:
+    title: Childhood vaccinations
+    category: Pediatrics
+    description: Immunization records of 10 children (0-17)
+    cohort: { count: 10, specialty: pediatrics }
+    shape: [ { slicer: resource_types, params: { groups: [immunizations], include_infrastructure: true } } ]
+    sink: { name: ndjson }
+  pediatrics-checkups:
+    title: Well-child check-ups
+    category: Pediatrics
+    description: Routine check-up visits (one bundle per visit) of 5 children (0-17)
+    cohort: { count: 5, specialty: pediatrics }
+    shape: [ { slicer: encounter, params: { selector: all, encounter_type: ["General examination of patient", "Encounter for check up"] } } ]
+    sink: { name: zip }
+  geriatrics-one-patient:
+    title: One older adult - full record
+    category: Geriatrics
+    description: The complete record of one patient aged 65 or over
+    cohort: { count: 1, specialty: geriatrics }
+    shape: [ { slicer: full_record, params: { include_infrastructure: true } } ]
+    sink: { name: zip }
+  geriatrics-last-5-years:
+    title: Older adults - the past 5 years
+    category: Geriatrics
+    description: The last five years of 5 patients aged 65 or over
+    cohort: { count: 5, specialty: geriatrics }
+    shape: [ { slicer: date_window, params: { last_n_years: 5 } } ]
+    sink: { name: zip }
+

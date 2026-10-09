@@ -1,0 +1,52 @@
+{
+  "resourceType": "Bundle",
+  "type": "batch",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:f8c723d5-bbca-5e59-9ea8-46db4394153f",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "f8c723d5-bbca-5e59-9ea8-46db4394153f",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "1111111111"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "text": "Dr. Sam Patel"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Practitioner"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:a47e63cf-2eca-56e8-b90f-db14881d8533",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "a47e63cf-2eca-56e8-b90f-db14881d8533",
+        "identifier": [
+          {
+            "system": "http://hl7.org/fhir/sid/us-npi",
+            "value": "2222222222"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "text": "Dr. Lee Chen"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Practitioner"
+      }
+    }
+  ]
+}

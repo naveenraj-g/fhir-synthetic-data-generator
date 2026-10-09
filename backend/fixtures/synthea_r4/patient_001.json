@@ -1,0 +1,824 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "a9c46151-7c62-51a5-afea-c447950ef080",
+        "identifier": [
+          {
+            "system": "https://github.com/synthetichealth/synthea",
+            "value": "a9c46151-7c62-51a5-afea-c447950ef080"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Rivera",
+            "given": [
+              "Alex"
+            ]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1968-05-14",
+        "address": [
+          {
+            "city": "Boston",
+            "state": "MA",
+            "country": "US"
+          }
+        ],
+        "maritalStatus": {
+          "text": "M"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "1e0f2514-b1ac-5e3b-866e-a69ff404f1e6",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185345009",
+                "display": "Encounter for symptom"
+              }
+            ],
+            "text": "Encounter for symptom"
+          }
+        ],
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "participant": [
+          {
+            "individual": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1111111111"
+            }
+          }
+        ],
+        "period": {
+          "start": "2024-03-04T09:00:00-05:00",
+          "end": "2024-03-04T09:30:00-05:00"
+        },
+        "serviceProvider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+        },
+        "location": [
+          {
+            "location": {
+              "reference": "Location?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Encounter"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "f709ebf5-2c27-5e5a-80f9-730f374aa5e6",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "IMP"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "183450002",
+                "display": "Surgical procedure admission"
+              }
+            ],
+            "text": "Surgical procedure admission"
+          }
+        ],
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "participant": [
+          {
+            "individual": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1111111111"
+            }
+          }
+        ],
+        "period": {
+          "start": "2024-09-10T07:00:00-04:00",
+          "end": "2024-09-12T11:00:00-04:00"
+        },
+        "serviceProvider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+        },
+        "location": [
+          {
+            "location": {
+              "reference": "Location?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Encounter"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:ed146ea1-43da-5ae6-ae91-875488bd03d0",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "ed146ea1-43da-5ae6-ae91-875488bd03d0",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "EMER"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "50849002",
+                "display": "Emergency room admission"
+              }
+            ],
+            "text": "Emergency room admission"
+          }
+        ],
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "participant": [
+          {
+            "individual": {
+              "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1111111111"
+            }
+          }
+        ],
+        "period": {
+          "start": "2025-01-20T22:00:00-05:00",
+          "end": "2025-01-21T02:00:00-05:00"
+        },
+        "serviceProvider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+        },
+        "location": [
+          {
+            "location": {
+              "reference": "Location?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Encounter"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2807639c-dddc-51b5-8059-6333da900a25",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "2807639c-dddc-51b5-8059-6333da900a25",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "44054006",
+              "display": "Diabetes mellitus type 2"
+            }
+          ],
+          "text": "Diabetes mellitus type 2"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "onsetDateTime": "2024-03-04T09:00:00-05:00"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Condition"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f288d297-dd60-50f1-a01b-fd0c69806ef8",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "f288d297-dd60-50f1-a01b-fd0c69806ef8",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+              "code": "active"
+            }
+          ]
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "38341003",
+              "display": "Hypertension"
+            }
+          ],
+          "text": "Hypertension"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "onsetDateTime": "2024-03-04T09:00:00-05:00"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Condition"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b731a636-09bc-5d09-8fd5-2351e011fee8",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "b731a636-09bc-5d09-8fd5-2351e011fee8",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8302-2",
+              "display": "Body height"
+            }
+          ],
+          "text": "Body height"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "effectiveDateTime": "2024-03-04T09:10:00-05:00",
+        "valueQuantity": {
+          "value": 178.4,
+          "unit": "cm",
+          "system": "http://unitsofmeasure.org",
+          "code": "cm"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:a85c0578-b794-59d9-9cd6-994020a97b5a",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "a85c0578-b794-59d9-9cd6-994020a97b5a",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "29463-7",
+              "display": "Body weight"
+            }
+          ],
+          "text": "Body weight"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "effectiveDateTime": "2024-03-04T09:10:00-05:00",
+        "valueQuantity": {
+          "value": 92.1,
+          "unit": "kg",
+          "system": "http://unitsofmeasure.org",
+          "code": "kg"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:be15c6d8-d80e-5df8-ab64-76978e40bfd1",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "be15c6d8-d80e-5df8-ab64-76978e40bfd1",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8480-6",
+              "display": "Systolic blood pressure"
+            }
+          ],
+          "text": "Systolic blood pressure"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "effectiveDateTime": "2024-03-04T09:10:00-05:00",
+        "valueQuantity": {
+          "value": 142,
+          "unit": "mm[Hg]",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:91f9ad20-cbb2-51cb-9212-b7903605eb11",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "91f9ad20-cbb2-51cb-9212-b7903605eb11",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8462-4",
+              "display": "Diastolic blood pressure"
+            }
+          ],
+          "text": "Diastolic blood pressure"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "effectiveDateTime": "2024-03-04T09:10:00-05:00",
+        "valueQuantity": {
+          "value": 88,
+          "unit": "mm[Hg]",
+          "system": "http://unitsofmeasure.org",
+          "code": "mm[Hg]"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:45760209-221b-5476-a9e0-57cbef57d685",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "45760209-221b-5476-a9e0-57cbef57d685",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "laboratory"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ],
+          "text": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "effectiveDateTime": "2024-03-04T09:15:00-05:00",
+        "valueQuantity": {
+          "value": 6.9,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:76f40a75-a177-5532-91a0-b49da791a7b0",
+      "resource": {
+        "resourceType": "Device",
+        "id": "76f40a75-a177-5532-91a0-b49da791a7b0",
+        "status": "active",
+        "patient": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "type": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "1234567",
+              "display": "Surgical stapler"
+            }
+          ],
+          "text": "Surgical stapler"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Device"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2915bc44-6a9c-533f-857b-0f0a593bb728",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "2915bc44-6a9c-533f-857b-0f0a593bb728",
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "80146002",
+              "display": "Appendectomy"
+            }
+          ],
+          "text": "Appendectomy"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6"
+        },
+        "focalDevice": [
+          {
+            "manipulated": {
+              "reference": "urn:uuid:76f40a75-a177-5532-91a0-b49da791a7b0"
+            }
+          }
+        ],
+        "performedPeriod": {
+          "start": "2024-09-10T08:00:00-04:00",
+          "end": "2024-09-10T10:00:00-04:00"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Procedure"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:695cc57a-3366-568f-893e-707246fe463e",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "695cc57a-3366-568f-893e-707246fe463e",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "860975",
+              "display": "Metformin hydrochloride 500 MG Oral Tablet"
+            }
+          ],
+          "text": "Metformin hydrochloride 500 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+        },
+        "authoredOn": "2024-03-04T09:20:00-05:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1111111111"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:fa62deeb-8189-53f9-9c40-3d8196140d03",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "fa62deeb-8189-53f9-9c40-3d8196140d03",
+        "status": "completed",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "1049630",
+              "display": "Ketorolac 10 MG Oral Tablet"
+            }
+          ],
+          "text": "Ketorolac 10 MG Oral Tablet"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6"
+        },
+        "authoredOn": "2024-09-10T07:30:00-04:00",
+        "requester": {
+          "reference": "Practitioner?identifier=http://hl7.org/fhir/sid/us-npi|1111111111"
+        },
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:2807639c-dddc-51b5-8059-6333da900a25"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:fd25d4d9-bf52-5275-84f2-ca5079684e60",
+      "resource": {
+        "resourceType": "DocumentReference",
+        "id": "fd25d4d9-bf52-5275-84f2-ca5079684e60",
+        "status": "current",
+        "type": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "34117-2",
+              "display": "History and physical note"
+            }
+          ],
+          "text": "History and physical note"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "date": "2024-09-10T07:10:00-04:00",
+        "context": {
+          "encounter": [
+            {
+              "reference": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6"
+            }
+          ]
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "DocumentReference"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:fe6822d7-5744-5f46-b15b-2130a8aa9705",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "fe6822d7-5744-5f46-b15b-2130a8aa9705",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8867-4",
+              "display": "Heart rate"
+            }
+          ],
+          "text": "Heart rate"
+        },
+        "subject": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "encounter": {
+          "reference": "urn:uuid:ed146ea1-43da-5ae6-ae91-875488bd03d0"
+        },
+        "effectiveDateTime": "2025-01-20T22:10:00-05:00",
+        "valueQuantity": {
+          "value": 118,
+          "unit": "/min",
+          "system": "http://unitsofmeasure.org",
+          "code": "/min"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:dcb6c515-30cc-52af-9620-00afa0b0d659",
+      "resource": {
+        "resourceType": "SupplyDelivery",
+        "id": "dcb6c515-30cc-52af-9620-00afa0b0d659",
+        "status": "completed",
+        "patient": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "occurrenceDateTime": "2024-09-11T09:00:00-04:00"
+      },
+      "request": {
+        "method": "POST",
+        "url": "SupplyDelivery"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:4bfdaa3b-e1f6-5ecd-bca3-c00ddd3f8427",
+      "resource": {
+        "resourceType": "Claim",
+        "id": "4bfdaa3b-e1f6-5ecd-bca3-c00ddd3f8427",
+        "status": "active",
+        "type": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/claim-type",
+              "code": "institutional"
+            }
+          ]
+        },
+        "use": "claim",
+        "patient": {
+          "reference": "urn:uuid:a9c46151-7c62-51a5-afea-c447950ef080"
+        },
+        "created": "2024-09-12T11:00:00-04:00",
+        "provider": {
+          "reference": "Organization?identifier=https://github.com/synthetichealth/synthea|ORG-0001"
+        },
+        "priority": {
+          "coding": [
+            {
+              "code": "normal"
+            }
+          ]
+        },
+        "insurance": [
+          {
+            "sequence": 1,
+            "focal": true,
+            "coverage": {
+              "display": "Medicare"
+            }
+          }
+        ],
+        "item": [
+          {
+            "sequence": 1,
+            "productOrService": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "80146002",
+                  "display": "Appendectomy"
+                }
+              ],
+              "text": "Appendectomy"
+            },
+            "encounter": [
+              {
+                "reference": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6"
+              }
+            ]
+          }
+        ],
+        "total": {
+          "value": 1250.0,
+          "currency": "USD"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Claim"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:33346249-b516-5125-8fea-ef47c6fb15be",
+      "resource": {
+        "resourceType": "Provenance",
+        "id": "33346249-b516-5125-8fea-ef47c6fb15be",
+        "recorded": "2026-01-01T00:00:00Z",
+        "target": [
+          {
+            "reference": "urn:uuid:1e0f2514-b1ac-5e3b-866e-a69ff404f1e6"
+          },
+          {
+            "reference": "urn:uuid:f709ebf5-2c27-5e5a-80f9-730f374aa5e6"
+          },
+          {
+            "reference": "urn:uuid:ed146ea1-43da-5ae6-ae91-875488bd03d0"
+          }
+        ],
+        "agent": [
+          {
+            "who": {
+              "display": "Synthea"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Provenance"
+      }
+    }
+  ]
+}

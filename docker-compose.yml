@@ -1,0 +1,14 @@
+# The whole application in one container: web UI + API + Synthea.   docker compose up --build   ->  http://localhost:3000
+services:
+  app:
+    build: .
+    image: fhir-synthetic-data:latest
+    ports:
+      - "3000:3000" # the web UI
+      # - "8000:8000" # the API on its own (interactive docs at /docs); only if you want to call it from scripts
+    volumes:
+      - app_data:/app/backend/data # job history and generated files (kept 72 h) survive restarts
+    restart: unless-stopped
+
+volumes:
+  app_data:

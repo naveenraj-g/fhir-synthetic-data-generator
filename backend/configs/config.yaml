@@ -1,0 +1,70 @@
+# Application-behavior config. Checked into git — not a secret, same spirit
+# as alembic.ini. True per-environment secrets (DB/Redis URLs, JWKS) still
+# live in .env, never here. Precedence, highest first: real env var > .env >
+# this file > field defaults — see app/core/config.py's
+# Settings.settings_customise_sources().
+#
+# The genuinely-caching setting (example_cache) lives in the sibling
+# configs/cache.yaml instead — see that file's header comment. redis and
+# rate_limit stay here even though redis is also used for caching
+# elsewhere: redis.enabled is an infra on/off switch (Redis can back
+# sessions, rate limiting, etc., not just caching), and rate_limit itself
+# isn't a cache either — it's a shared sliding-window counter, not
+# something stored to avoid a re-fetch.
+
+app:
+  title: "FHIR Synthetic Data Generator"
+  version: "0.1.0"
+  docs_enabled: true
+
+cors:
+  enabled: false
+  allow_origins: []
+  allow_credentials: false
+  allow_methods: ["*"]
+  allow_headers: ["*"]
+
+auth:
+  algorithms: [RS256]
+
+database:
+  pool_size: 5
+  max_overflow: 10
+  pool_pre_ping: true
+  pool_recycle: 1800
+
+logging:
+  level: INFO
+  format: json
+  debug_payloads: false
+  slow_query_ms: 500
+  sql_echo: false
+  uvicorn_access: false
+  redact:
+    - authorization
+    - token
+    - password
+    - secret
+
+redis:
+  # Global switch — see header comment above. v1 of the generator does not need Redis
+  # (in-process job runner), so it is off by default; flip to true if you add it.
+  enabled: false
+
+rate_limit:
+  backend: redis
+  read_limit: 100
+  write_limit: 20
+  window_seconds: 60
+
+pagination:
+  default_limit: 50
+  max_limit: 200
+
+routes:
+  # Which resource routers get mounted under /api/v1 at startup. Not
+  # listed = not mounted — see CLAUDE-style "Enabling/Disabling Resources"
+  # convention in the README.
+  enabled:
+    - generations
+    - catalog

@@ -1,0 +1,13 @@
+FHIR Synthetic Data Generator
+Copyright 2026 Naveen Raj
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It uses the following third-party software. Each keeps its own license.
+
+* Synthea(TM) - synthetic patient generator, Apache License 2.0, by The MITRE Corporation
+  and the Synthea contributors. https://github.com/synthetichealth/synthea
+  The Docker image downloads the pinned release jar (v4.0.0) during the build and bundles it; this repository does
+  not contain Synthea's source or jar. This project is not affiliated with or endorsed by MITRE or the Synthea team.
+* Python and JavaScript dependencies are listed in backend/pyproject.toml (backend/uv.lock) and
+  frontend/package.json (frontend/pnpm-lock.yaml), each under its own license.

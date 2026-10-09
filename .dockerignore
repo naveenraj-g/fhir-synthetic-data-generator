@@ -1,0 +1,17 @@
+# Keep the build context small and, above all, keep local data out of the image (backend/data holds your own jobs).
+.git
+**/node_modules
+**/.next
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.DS_Store
+backend/.venv
+backend/data
+backend/tests
+backend/.env
+frontend/.env*
+frontend/tsconfig.tsbuildinfo
+frontend/openapi.json
+plan
