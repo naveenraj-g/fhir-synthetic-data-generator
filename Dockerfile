@@ -36,7 +36,9 @@ COPY backend/ ./
 FROM python:3.12-slim AS runtime
 
 # Links the published package to the repository on GitHub and states the licence.
-LABEL org.opencontainers.image.source="https://github.com/naveenraj-g/fhir-synthetic-data-generator" \n      org.opencontainers.image.description="Configurable synthetic FHIR data generator: web UI, API and Synthea in one image" \n      org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.source="https://github.com/naveenraj-g/fhir-synthetic-data-generator" \
+      org.opencontainers.image.description="Configurable synthetic FHIR data generator: web UI, API and Synthea in one image" \
+      org.opencontainers.image.licenses="Apache-2.0"
 
 # Synthea runs inside this image (SYNTHEA_MODE=local): a container cannot start sibling containers without the host's
 # Docker socket, so a JRE and the pinned Synthea release jar are bundled. The checksum makes the build fail loudly if
